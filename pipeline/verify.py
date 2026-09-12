@@ -150,6 +150,42 @@ def check_words(script: CaseScript) -> Check:
     return Check("禁用词", True, "无情绪结论词、无自我指涉")
 
 
+def check_caption_match(script: CaseScript, assets_dir: Path) -> Check:
+    """图注与配图是否相符 —— 只能人看。
+
+    图注是在配图之前写的，之后才把图挂上去，中间没有任何环节检查两者是否一致。
+    实测踩过：图注写「出发前的队伍合影，1959年1月」，实际配的是 2012 年拍的
+    纪念碑肖像；图注写「卷宗中的现场位置示意」，实际配的是卷宗封面。
+    这类错误恰好撞在 docs/compliance.md 的第一条红线上（不编造细节），
+    机器判断不了图里是什么，所以列为强制人工项，把每一对图注/文件名摆出来对照。
+    """
+    pairs = []
+    for i, page in enumerate(script.pages, start=1):
+        if not page.image_caption:
+            continue
+        asset = next(
+            (assets_dir / f"p{i:02d}{e}" for e in IMAGE_EXTS
+             if (assets_dir / f"p{i:02d}{e}").exists()),
+            None,
+        )
+        if asset is None:
+            continue
+        source = "（assets.yaml 未登记）"
+        manifest = assets_dir / "assets.yaml"
+        if manifest.exists():
+            data = yaml.safe_load(manifest.read_text(encoding="utf-8")) or {}
+            entry = next(
+                (a for a in (data.get("assets") or []) if a.get("file") == asset.name),
+                None,
+            )
+            if entry:
+                source = entry.get("note") or entry.get("source_url", "")
+        pairs.append(f"      · 第 {i} 页 图注「{page.image_caption}」\n        配图 {source}")
+    if not pairs:
+        return Check("图注与配图相符", True, "无配图页", needs_human=False)
+    return Check("图注与配图相符", True, "\n".join(pairs), needs_human=True)
+
+
 def run(script: CaseScript, assets_dir: Path) -> Report:
     report = Report()
     report.checks.append(check_hook(script))
@@ -157,7 +193,8 @@ def run(script: CaseScript, assets_dir: Path) -> Report:
     report.checks.append(check_layout(script))
     report.checks.append(check_words(script))
     report.checks.extend(check_assets(script, assets_dir))
-    # 这两项机器判断不了，必须人看
+    report.checks.append(check_caption_match(script, assets_dir))
+    # 以下几项机器判断不了，必须人看
     report.checks.append(
         Check(
             "事实核查", True,

@@ -18,12 +18,12 @@ from pathlib import Path
 
 import yaml
 
-from pipeline import archive, verify
+from pipeline import archive, assets_search, verify
 from pipeline.config import ROOT, load_config
 from pipeline.models import CaseScript
 from pipeline.package import build_carousel, build_longpic, write_assets_todo, write_copy
 from pipeline.render import render_case
-from pipeline.video import build_video, page_durations
+from pipeline.video import MissingFFmpeg, build_video, page_durations
 
 OUT = ROOT / "out"
 ASSETS = ROOT / "topics" / "assets"
@@ -63,14 +63,18 @@ def cmd_build(args: argparse.Namespace) -> int:
 
     bgm = _pick_bgm(script, args.bgm)
 
-    video = build_video(pngs, out_dir / "video_9x16.mp4", cfg, bgm,
-                        page_durations(script, cfg))
+    try:
+        video = build_video(pngs, out_dir / "video_9x16.mp4", cfg, bgm,
+                            page_durations(script, cfg))
+    except MissingFFmpeg as exc:
+        video = None
+        print(f"\n跳过视频：{exc}\n", file=sys.stderr)
     carousel = build_carousel(pngs, out_dir)
     longpic = build_longpic(pngs, out_dir)
     copy = write_copy(script, cfg, case_no, out_dir)
     todo = write_assets_todo(script, out_dir)
 
-    print(f"视频号/抖音：{video}")
+    print(f"视频号/抖音：{video if video else '未生成（缺 ffmpeg）'}")
     print(f"小红书轮播：{carousel}")
     print(f"公众号长图：{longpic}")
     print(f"文案与清单：{copy}")
@@ -111,6 +115,105 @@ def _pick_bgm(script: CaseScript, explicit: str | None) -> Path | None:
     print(f"曲库里没有 {script.bgm_mood} 情绪的配乐，出无声轨。", file=sys.stderr)
     print(f"  生成一条：python scripts/make_bgm.py --mood {script.bgm_mood}", file=sys.stderr)
     return None
+
+def cmd_assets(args: argparse.Namespace) -> int:
+    """检索候选配图，下缩略图，生成九宫格供人终审。定稿走 pick。"""
+    script = _load(args.slug)
+    review = OUT / args.slug / "review"
+    queries = [p.image_query for p in script.pages if p.image_query]
+
+    print(f"检索 {script.case_title}（{len(queries)} 页需配图）")
+    if not script.wiki_refs and not script.commons_categories:
+        print("  提示：script.json 没写 wiki_refs / commons_categories，只能靠关键词检索，")
+        print("        命中率会低很多。带上事发国语言的维基条目效果最好。")
+
+    pool, log = assets_search.collect(
+        queries,
+        wiki_refs=script.wiki_refs,
+        categories=script.commons_categories,
+        use_nasa=args.nasa,
+    )
+    print("\n各来源：")
+    for line in log:
+        print(line)
+
+    if not pool:
+        print("\n一张候选都没有。检查 query 是否过长，或补 wiki_refs / commons_categories。")
+        return 1
+
+    thumbs = review / "thumbs"
+    thumbs.mkdir(parents=True, exist_ok=True)
+    kept: list[assets_search.Candidate] = []
+    dropped = 0
+    print(f"\n下缩略图并判别（候选池 {len(pool)} 张）…")
+    for c in pool:
+        dest = thumbs / f"{len(kept) + 1:03d}.jpg"
+        try:
+            assets_search.download(c.thumb_url, dest)
+        except ConnectionError as exc:
+            print(f"  跳过 {c.title[:40]}：{exc}")
+            continue
+        ok, why = assets_search.looks_like_photo(dest, c.kind)
+        if not ok:
+            dest.unlink(missing_ok=True)
+            dropped += 1
+            if args.verbose:
+                print(f"  剔除 {c.title[:45]:45s} {why}")
+            continue
+        c.notes.append(why)
+        kept.append(c)
+
+    print(f"\n通过 {len(kept)} 张，剔除 {dropped} 张（文书扫描件/尺寸过小）")
+    path = assets_search.contact_sheet(kept, review, args.slug)
+    (review / "candidates.json").write_text(
+        json.dumps([c.__dict__ for c in kept], ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"九宫格：{path}")
+    print(f"  open {path}")
+    return 0
+
+
+def cmd_pick(args: argparse.Namespace) -> int:
+    """把选中的候选下成正图，并自动登记到 assets.yaml。"""
+    review = OUT / args.slug / "review"
+    store = review / "candidates.json"
+    if not store.exists():
+        print(f"找不到 {store}，先跑 assets", file=sys.stderr)
+        return 2
+    candidates = json.loads(store.read_text(encoding="utf-8"))
+    if not 1 <= args.choice <= len(candidates):
+        print(f"--choice 超范围，共 {len(candidates)} 张候选", file=sys.stderr)
+        return 2
+    chosen = candidates[args.choice - 1]
+
+    assets_dir = ASSETS / args.slug
+    dest = assets_dir / f"p{args.page:02d}.jpg"
+    assets_search.download(chosen["file_url"], dest)
+    print(f"已下载 {dest}（{dest.stat().st_size // 1024} KB）")
+
+    manifest = assets_dir / "assets.yaml"
+    data = yaml.safe_load(manifest.read_text(encoding="utf-8")) if manifest.exists() else None
+    data = data or {"assets": []}
+    entry = {
+        "file": dest.name,
+        "source_url": chosen["descr_url"],
+        "license": chosen["license"],
+        "author": chosen["author"],
+        "checked_at": date.today().isoformat(),
+        "note": f"经 {chosen['source']} 检索；标题《{chosen['title']}》",
+    }
+    data["assets"] = [a for a in data["assets"] if a.get("file") != dest.name] + [entry]
+    data["assets"].sort(key=lambda a: a.get("file", ""))
+    manifest.write_text(
+        yaml.safe_dump(data, allow_unicode=True, sort_keys=False), encoding="utf-8"
+    )
+    print(f"已登记 {manifest}")
+    if "-sa" in chosen["license"].lower():
+        print(f"  注意：{chosen['license']} 带 SA 传染性，成品理论上需同样授权。")
+    if "cc by" in chosen["license"].lower():
+        print(f"  注意：需在片中署名 —— {chosen['author'][:60]}")
+    return 0
 
 
 def _load(slug: str) -> CaseScript:
@@ -226,6 +329,18 @@ def main() -> int:
     p_verify.add_argument("--yes", action="store_true",
                           help="跳过人工确认，台账记为 auto（不建议）")
     p_verify.set_defaults(func=cmd_verify)
+
+    p_assets = sub.add_parser("assets", help="检索候选配图，生成九宫格供终审")
+    p_assets.add_argument("--slug", required=True)
+    p_assets.add_argument("--nasa", action="store_true", help="额外查 NASA 图库（地貌空镜）")
+    p_assets.add_argument("--verbose", action="store_true", help="打印被剔除的候选及原因")
+    p_assets.set_defaults(func=cmd_assets)
+
+    p_pick = sub.add_parser("pick", help="选定候选，下原图并自动登记授权")
+    p_pick.add_argument("--slug", required=True)
+    p_pick.add_argument("--page", type=int, required=True, help="页码，对应 pNN.jpg")
+    p_pick.add_argument("--choice", type=int, required=True, help="九宫格里的 # 编号")
+    p_pick.set_defaults(func=cmd_pick)
 
     p_status = sub.add_parser("status", help="查看归档台账")
     p_status.set_defaults(func=cmd_status)
