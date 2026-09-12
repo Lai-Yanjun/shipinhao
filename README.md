@@ -30,6 +30,10 @@
 
 ## 快速开始
 
+**建议在本地机器上跑**，不要在云端会话里跑完整流程 —— 云端沙箱的出网策略
+拦截了图片站、B 站和发布所需的一切，六个环节里有三个走不通。
+原因与取舍见 `docs/local-setup.md`。
+
 ```bash
 bash scripts/setup.sh          # ffmpeg + Chromium + 思源黑体 + Python 依赖
 python cli.py list             # 看选题池
