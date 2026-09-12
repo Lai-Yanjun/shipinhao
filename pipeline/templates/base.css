@@ -179,13 +179,34 @@ figcaption {
   text-indent: 0.42em;
 }
 
-.cover .hook {
-  margin-top: 64px;
-  font-size: 136px;
+.cover .maintitle {
+  margin-top: 58px;
+  font-size: 98px;
   font-weight: 700;
-  line-height: 1.16;
+  line-height: 1.18;
   letter-spacing: 0.03em;
   text-shadow: 0 6px 28px rgba(0, 0, 0, 0.6);
+}
+
+/* 副标题负责拉人 —— 正式命名给可信度，钩子给点击率，两者都要 */
+.cover .subtitle {
+  margin-top: 26px;
+  font-size: 64px;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: 0.04em;
+  color: #86BBD6;
+}
+
+.cover .subtitle::before,
+.cover .subtitle::after {
+  content: "";
+  display: inline-block;
+  width: 46px;
+  height: 3px;
+  background: rgba(134, 187, 214, 0.55);
+  vertical-align: middle;
+  margin: 0 22px 14px;
 }
 
 .cover .caseline {

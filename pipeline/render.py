@@ -82,14 +82,16 @@ def _figure_html(page: Page, asset: Path | None) -> str:
     return f"<figure>{inner}{caption}</figure>"
 
 
-def build_cover_html(script: CaseScript, cfg: dict[str, Any], asset: Path | None) -> str:
+def build_cover_html(
+    script: CaseScript, cfg: dict[str, Any], case_no: int, asset: Path | None
+) -> str:
     brand = cfg["brand"]
     cover_page = script.pages[0]
     if asset is not None:
         photo = (
             '<div class="photo">'
             f'<img src="{_esc(asset.name)}">'
-            f'<div class="stamp">CASE {script.slug.upper()[:14]}</div>'
+            f'<div class="stamp">CASE {case_no:02d} · {script.year}</div>'
             "</div>"
         )
     else:
@@ -105,7 +107,8 @@ def build_cover_html(script: CaseScript, cfg: dict[str, Any], asset: Path | None
 <body><div class="cover">
   {NOISE_SVG.format(opacity="0.22")}
   <div class="brandline">{_esc(brand['masthead'])} · {_esc(brand['column'])}</div>
-  <div class="hook">{_esc(script.hook_title)}</div>
+  <div class="maintitle">{_esc(script.case_title)}</div>
+  <div class="subtitle">{_esc(script.hook_title)}</div>
   <div class="caseline">{_esc(script.meta_line)}</div>
   <div class="divider"></div>
   {photo}
@@ -182,7 +185,7 @@ def render_case(
         if asset is not None:
             shutil.copy2(asset, html_dir / asset.name)
         if page.kind == "cover":
-            html = build_cover_html(script, cfg, asset)
+            html = build_cover_html(script, cfg, case_no, asset)
         else:
             html = build_page_html(script, page, i, total, case_no, cfg, asset)
         path = html_dir / f"p{i:02d}.html"
