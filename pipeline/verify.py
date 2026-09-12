@@ -22,6 +22,9 @@ MAX_CHARS_PER_LINE = 18
 MAX_LINES_PER_PAGE = 5
 # 替观众下情绪结论的词。对标样本里一个都没有。
 BANNED_WORDS = ("震惊", "细思极恐", "毛骨悚然", "不寒而栗", "骇人听闻", "令人发指", "真相竟然")
+# 自我指涉。我们没有主播，页面上出现这些等于把黄金位置让给废话 ——
+# 对标样本里写得最差的几条开场全栽在这里。
+SELF_REFERENCE = ("本期", "本栏目", "这期", "欢迎来到", "大家好", "今天给大家")
 
 
 @dataclass
@@ -132,14 +135,16 @@ def check_layout(script: CaseScript) -> Check:
 
 
 def check_words(script: CaseScript) -> Check:
-    """禁用词。这类词是替观众下情绪结论，反而显得内容不够硬要靠形容词撑。"""
+    """两类词：替观众下情绪结论的，和把版面让给废话的。"""
     hits = []
     for i, page in enumerate(script.pages, start=1):
+        # cta 页允许引导互动，但仍不许自报家门
+        banned = BANNED_WORDS + SELF_REFERENCE
         for line in [page.headline, *page.body_lines]:
-            hits += [f"第 {i} 页「{w}」" for w in BANNED_WORDS if w in line]
+            hits += [f"第 {i} 页「{w}」" for w in banned if w in line]
     if hits:
         return Check("禁用词", False, "；".join(hits))
-    return Check("禁用词", True, "无")
+    return Check("禁用词", True, "无情绪结论词、无自我指涉")
 
 
 def run(script: CaseScript, assets_dir: Path) -> Report:
