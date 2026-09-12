@@ -36,8 +36,17 @@ UA = "polar-archive/0.1 (https://github.com/Lai-Yanjun/shipinhao; content pipeli
 ALLOWED_KEYWORDS = ("public domain", "cc0", "cc by")
 DENY_KEYWORDS = ("fair use", "non-free", "nonfree", "unknown")
 
-# 进片格式：find_asset 只认这几种，SVG 下下来是废的
+# 进片格式：find_asset 只认这几种
 RASTER_MIMES = ("image/jpeg", "image/png", "image/webp")
+# SVG 不直接进片，但 Commons 的 Special:FilePath 带 ?width= 会栅格化成 PNG，
+# 所以矢量地图不该丢 —— 一个事件分类里常有十几张现成的地形/路线图。
+VECTOR_MIMES = ("image/svg+xml",)
+FILEPATH = "https://commons.wikimedia.org/wiki/Special:FilePath/"
+
+
+def rasterized(title: str, width: int = 1600) -> str:
+    """把 Commons 文件名转成栅格化 URL。SVG 会被服务端渲染成 PNG。"""
+    return f"{FILEPATH}{urllib.parse.quote(title.replace(' ', '_'))}?width={width}"
 
 # 维基条目里的界面元件与地图挂件，不是配图
 JUNK_PATTERNS = (
@@ -87,6 +96,7 @@ class Candidate:
     mime: str = ""
     width: int = 0
     height: int = 0
+    kind: str = "photo"              # photo | map，两者的判别与用途都不同
     notes: list[str] = field(default_factory=list)   # 过滤过程中的观察，展示给人看
 
     @property
@@ -176,10 +186,12 @@ def _to_candidate(page: dict, source: str) -> Candidate | None:
         return None
     meta = info.get("extmetadata", {})
     get = lambda key: _strip_html((meta.get(key) or {}).get("value", ""))
+    is_vector = mime in VECTOR_MIMES
     return Candidate(
         title=title,
-        file_url=info.get("url", ""),
-        thumb_url=info.get("thumburl") or info.get("url", ""),
+        file_url=rasterized(title) if is_vector else info.get("url", ""),
+        thumb_url=(rasterized(title, 900) if is_vector
+                   else info.get("thumburl") or info.get("url", "")),
         license=get("LicenseShortName") or (meta.get("License") or {}).get("value", ""),
         author=get("Artist") or "未署名",
         taken=get("DateTimeOriginal")[:40] or get("DateTime")[:40],
@@ -188,6 +200,7 @@ def _to_candidate(page: dict, source: str) -> Candidate | None:
         mime=mime,
         width=info.get("width", 0),
         height=info.get("height", 0),
+        kind="map" if is_vector else "photo",
     )
 
 
@@ -323,7 +336,7 @@ def nasa_search(query: str, limit: int = 8) -> list[Candidate]:
 
 # ---------------------------------------------------------------- 能不能看
 
-def looks_like_photo(path: Path) -> tuple[bool, str]:
+def looks_like_photo(path: Path, kind: str = "photo") -> tuple[bool, str]:
     """判断这张图是不是「能看的照片」，而不是卷宗扫描件。
 
     档案馆里大量是手写文书扫描件：授权干净，但竖屏视频里观众看不清也看不懂。
@@ -347,6 +360,9 @@ def looks_like_photo(path: Path) -> tuple[bool, str]:
 
     if width < 400 or height < 400:
         return False, f"尺寸过小 {width}×{height}"
+    if kind == "map":
+        # 地图本来就是白底线稿，「纸是白的」这条对它不成立 —— 用它判会全军覆没
+        return True, f"矢量地图，已栅格化 {width}×{height}"
     if luma > 170 and dark < 0.20:
         return False, f"疑似文书扫描件（亮度 {luma:.0f}，暗部仅 {dark:.0%}）"
     return True, f"{width}×{height}，亮度 {luma:.0f}，暗部 {dark:.0%}"
@@ -374,7 +390,7 @@ def collect(
     def take(items: list[Candidate], label: str) -> None:
         kept = 0
         for c in items:
-            if c.mime and c.mime not in RASTER_MIMES:
+            if c.mime and c.mime not in RASTER_MIMES + VECTOR_MIMES:
                 continue
             if not c.acceptable:
                 continue

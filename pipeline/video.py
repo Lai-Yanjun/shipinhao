@@ -37,6 +37,10 @@ def page_durations(script: Any, cfg: dict[str, Any]) -> list[float]:
     return out
 
 
+class MissingFFmpeg(RuntimeError):
+    """ffmpeg 不在 PATH 上。单独一个类型，好让调用方降级而不是整个崩掉。"""
+
+
 def build_video(
     pngs: list[Path],
     out_path: Path,
@@ -95,7 +99,16 @@ def build_video(
         str(out_path),
     ]
 
-    result = subprocess.run(cmd, capture_output=True, text=True)
+    try:
+        result = subprocess.run(cmd, capture_output=True, text=True)
+    except FileNotFoundError as exc:
+        # 缺 ffmpeg 不该抛裸 traceback：图片成品（轮播、长图）本来就不依赖它，
+        # 让 build 把能做的先做完，只把视频这一项标为缺失。
+        raise MissingFFmpeg(
+            "找不到 ffmpeg，无法合成视频。图片成品不受影响。\n"
+            "  macOS：brew install ffmpeg（或跑 scripts/setup.sh）\n"
+            "  Linux：apt-get install ffmpeg"
+        ) from exc
     if result.returncode != 0:
         raise RuntimeError(
             f"ffmpeg 合成失败：\n{result.stderr.strip()}\n命令：{shlex.join(cmd)}"

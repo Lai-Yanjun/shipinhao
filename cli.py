@@ -23,7 +23,7 @@ from pipeline.config import ROOT, load_config
 from pipeline.models import CaseScript
 from pipeline.package import build_carousel, build_longpic, write_assets_todo, write_copy
 from pipeline.render import render_case
-from pipeline.video import build_video, page_durations
+from pipeline.video import MissingFFmpeg, build_video, page_durations
 
 OUT = ROOT / "out"
 ASSETS = ROOT / "topics" / "assets"
@@ -66,14 +66,18 @@ def cmd_build(args: argparse.Namespace) -> int:
         print(f"BGM 不存在：{bgm}，改出无声轨", file=sys.stderr)
         bgm = None
 
-    video = build_video(pngs, out_dir / "video_9x16.mp4", cfg, bgm,
-                        page_durations(script, cfg))
+    try:
+        video = build_video(pngs, out_dir / "video_9x16.mp4", cfg, bgm,
+                            page_durations(script, cfg))
+    except MissingFFmpeg as exc:
+        video = None
+        print(f"\n跳过视频：{exc}\n", file=sys.stderr)
     carousel = build_carousel(pngs, out_dir)
     longpic = build_longpic(pngs, out_dir)
     copy = write_copy(script, cfg, case_no, out_dir)
     todo = write_assets_todo(script, out_dir)
 
-    print(f"视频号/抖音：{video}")
+    print(f"视频号/抖音：{video if video else '未生成（缺 ffmpeg）'}")
     print(f"小红书轮播：{carousel}")
     print(f"公众号长图：{longpic}")
     print(f"文案与清单：{copy}")
@@ -132,7 +136,7 @@ def cmd_assets(args: argparse.Namespace) -> int:
         except ConnectionError as exc:
             print(f"  跳过 {c.title[:40]}：{exc}")
             continue
-        ok, why = assets_search.looks_like_photo(dest)
+        ok, why = assets_search.looks_like_photo(dest, c.kind)
         if not ok:
             dest.unlink(missing_ok=True)
             dropped += 1
