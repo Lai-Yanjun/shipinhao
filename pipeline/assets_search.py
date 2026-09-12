@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import json
+import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -18,6 +19,19 @@ from pathlib import Path
 
 API = "https://commons.wikimedia.org/w/api.php"
 UA = "polar-archive/0.1 (content pipeline; contact via repository)"
+
+
+def _ssl_context() -> ssl.SSLContext:
+    """python.org 版 macOS Python 默认不挂系统根证书，握手会直接失败。
+    有 certifi 就用 certifi，没有就退回默认（Linux/Homebrew 上本来就是好的）。"""
+    try:
+        import certifi
+    except ModuleNotFoundError:
+        return ssl.create_default_context()
+    return ssl.create_default_context(cafile=certifi.where())
+
+
+SSL_CONTEXT = _ssl_context()
 
 # 只接受这些授权。宁可漏，不可错。
 ALLOWED_PREFIXES = ("pd", "cc0", "cc-by")
@@ -58,7 +72,7 @@ def _strip_html(value: str) -> str:
 def _api(params: dict[str, str]) -> dict:
     url = f"{API}?{urllib.parse.urlencode({**params, 'format': 'json'})}"
     request = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(request, timeout=30) as response:
+    with urllib.request.urlopen(request, timeout=30, context=SSL_CONTEXT) as response:
         return json.load(response)
 
 
@@ -76,10 +90,13 @@ def search(query: str, limit: int = 8, thumb_width: int = 900) -> list[Candidate
             "iiurlwidth": str(thumb_width),
         })
     except (urllib.error.URLError, TimeoutError) as exc:
-        raise ConnectionError(
-            f"连不上 Wikimedia Commons：{exc}。"
-            "云端环境通常有出网限制，这一步请在本地机器上跑。"
-        ) from exc
+        reason = getattr(exc, "reason", exc)
+        if isinstance(reason, ssl.SSLCertVerificationError):
+            hint = ("本机 Python 找不到 CA 根证书。装一下 certifi："
+                    "pip install certifi，或跑 Install Certificates.command")
+        else:
+            hint = "云端环境通常有出网限制，这一步请在本地机器上跑。"
+        raise ConnectionError(f"连不上 Wikimedia Commons：{exc}。{hint}") from exc
 
     pages = (data.get("query") or {}).get("pages", {})
     candidates: list[Candidate] = []
@@ -107,7 +124,7 @@ def search(query: str, limit: int = 8, thumb_width: int = 900) -> list[Candidate
 
 def download(url: str, dest: Path) -> Path:
     request = urllib.request.Request(url, headers={"User-Agent": UA})
-    with urllib.request.urlopen(request, timeout=60) as response:
+    with urllib.request.urlopen(request, timeout=60, context=SSL_CONTEXT) as response:
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_bytes(response.read())
     return dest
