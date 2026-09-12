@@ -70,8 +70,27 @@ def write_assets_todo(script: CaseScript, out_dir: Path) -> Path:
         )
     content = f"""# 配图任务单 · {script.case_title}
 
-云端会话搜得到、读得到授权信息，但**下载不了文件**（出网策略拦截外部站点）。
-所以这里只出任务单，由你照单下载。
+云端会话搜得到、读得到授权信息，但**下载不了文件** —— 实测所有图片站
+（upload.wikimedia.org、archive.org、pexels 等）均被出网策略拦截，只有 GitHub 可达。
+
+所以流程是 **git 中转**：你在本地照单下载 → 提交进仓库 → 云端 pull 下来渲染。
+
+## 下载方法
+
+Commons 用 `Special:FilePath` 取文件，不需要知道哈希路径；
+带 `?width=` 还会把 SVG 自动栅格化成 PNG：
+
+```bash
+mkdir -p topics/assets/{script.slug}
+curl -L -o topics/assets/{script.slug}/p0N.jpg \\
+  "https://commons.wikimedia.org/wiki/Special:FilePath/<文件名>?width=1600"
+```
+
+下完提交推送，云端就能用：
+
+```bash
+git add topics/assets/{script.slug}/ && git commit -m "CASE 素材" && git push
+```
 
 ## 授权判断规则
 

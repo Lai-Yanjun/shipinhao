@@ -1,16 +1,13 @@
 out/
 __pycache__/
 *.pyc
-topics/assets/**/*.jpg
-topics/assets/**/*.jpeg
-topics/assets/**/*.png
-topics/assets/**/*.webp
 assets/bgm/
 .venv/
-topics/assets/dyatlov-pass/
 archive/CASE-*/
-topics/assets/dyatlov-v2/
-topics/assets/dyatlov-v3/
-topics/assets/dyatlov-v4/
 assets/bgm/**/*.mp3
 assets/bgm/**/*.wav
+
+# 素材图片必须入库 —— 云端会话的出网策略拦截了所有图片站，
+# git 是把图片送进渲染环境的唯一通路。
+# 只排除我为验证排版生成的合成占位图。
+topics/assets/_synthetic/
