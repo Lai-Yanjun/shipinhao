@@ -151,11 +151,17 @@ def write_copy(script: CaseScript, cfg: dict[str, Any], case_no: int, out_dir: P
 
 情绪标签：`{script.bgm_mood}`
 
-优先用平台自带曲库（视频号／抖音）—— 零版权风险，且平台对使用自家曲库的内容有流量倾斜。
-在平台内搜索方向：{_BGM_KEYWORDS.get(script.bgm_mood, '氛围 / 纪录片 / 低频')}。
+**默认做法：成片出无声轨，发布时在 App 内选配乐。**
 
-需要统一听感时（公众号长图那条线用不上平台曲库），从 `assets/bgm/{script.bgm_mood}/`
-里选一首，合成时 `--bgm` 指过去。该目录只放你确认过商用授权的曲子。
+平台曲库是平台自己买的一揽子授权，你在 App 里选曲完全合法；
+把 mp3 烧进视频再上传则不在该授权范围内 —— 观众看着一样，法律上是两回事。
+用自家曲库还有流量倾斜。
+
+App 内搜索方向：{_BGM_KEYWORDS.get(script.bgm_mood, '氛围 / 纪录片 / 低频')}
+
+只有公众号长图那条线用不上平台曲库，或需要跨平台统一听感时，
+才从 `assets/bgm/{script.bgm_mood}/` 取曲并 `--bgm` 指过去 ——
+该目录只放你确认过商用授权的曲子，见 `assets/bgm/README.md`。
 
 ## 发布前清单
 
@@ -163,6 +169,7 @@ def write_copy(script: CaseScript, cfg: dict[str, Any], case_no: int, out_dir: P
 - [ ] 图注中的时间、地点、机构与史料一致
 - [ ] 文案无主观推测、无因果结论、未指控任何在世个人
 - [ ] 发布时勾选平台的「内容由 AI 生成」声明
+- [ ] 配乐在 App 内从平台曲库选择，未把外部音频烧进成片
 - [ ] 封面钩子未使用事件学名
 """
     path = out_dir / "copy.md"
