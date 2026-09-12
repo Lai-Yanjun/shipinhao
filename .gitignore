@@ -1,4 +1,3 @@
-.env
 out/
 __pycache__/
 *.pyc
@@ -8,3 +7,5 @@ topics/assets/**/*.png
 topics/assets/**/*.webp
 assets/bgm/
 .venv/
+topics/assets/dyatlov-pass/
+archive/CASE-*/
