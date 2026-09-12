@@ -1,0 +1,10 @@
+.env
+out/
+__pycache__/
+*.pyc
+topics/assets/**/*.jpg
+topics/assets/**/*.jpeg
+topics/assets/**/*.png
+topics/assets/**/*.webp
+assets/bgm/
+.venv/

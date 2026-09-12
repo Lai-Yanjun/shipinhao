@@ -1,0 +1,116 @@
+{
+  "slug": "dyatlov-pass",
+  "case_title": "迪亚特洛夫事件",
+  "hook_title": "赤脚逃出帐篷",
+  "year": 1959,
+  "region": "苏联 · 乌拉尔",
+  "meta_line": "1959 · 苏联 · 乌拉尔",
+  "pages": [
+    {
+      "kind": "cover",
+      "headline": "",
+      "body_lines": [],
+      "image_caption": "",
+      "image_query": "Dyatlov Pass tent 1959 investigators snow"
+    },
+    {
+      "kind": "coordinate",
+      "headline": "1079 高地",
+      "body_lines": [
+        "1959年1月，苏联乌拉尔山北部。",
+        "9 名登山者向奥托尔滕山进发。",
+        "队伍平均年龄 23 岁，均为有经验的滑雪者。",
+        "2月1日，他们在 1079 高地东坡扎营。"
+      ],
+      "image_caption": "图：1959年2月，调查人员在海拔1079米的营地帐篷现场",
+      "image_query": "Dyatlov Pass 1959 tent site investigators"
+    },
+    {
+      "kind": "fact",
+      "headline": "帐篷是从内侧割开的",
+      "body_lines": [
+        "2月26日，搜索队找到营地。",
+        "帐篷半埋在雪中，篷布有数道裂口。",
+        "鉴定结论：切口来自内侧。",
+        "所有人的鞋、外衣仍留在帐篷里。"
+      ],
+      "image_caption": "图：被发现时的帐篷，篷布上可见数处裂口",
+      "image_query": "Dyatlov Pass slashed tent canvas 1959"
+    },
+    {
+      "kind": "fact",
+      "headline": "雪地上的九串脚印",
+      "body_lines": [
+        "帐篷外留有九人的脚印，通向坡下密林。",
+        "脚印显示他们穿着袜子或赤脚。",
+        "当夜气温低至零下二十余度。",
+        "两具遗体在 1.5 公里外的雪松下被找到。"
+      ],
+      "image_caption": "图：搜索队沿坡下方向推进，1959年2月",
+      "image_query": "Dyatlov Pass search party February 1959 slope"
+    },
+    {
+      "kind": "fact",
+      "headline": "尸检记录的伤情",
+      "body_lines": [
+        "五人死因被认定为体温过低。",
+        "另有人被记录为颅骨骨折与多处肋骨骨折。",
+        "一名死者的尸检记录中缺失舌与部分软组织。",
+        "遗体在五月融雪后才陆续找到。"
+      ],
+      "image_caption": "图：1959年5月，搜索工作在融雪后继续进行",
+      "image_query": "Dyatlov Pass search May 1959 ravine"
+    },
+    {
+      "kind": "contradiction",
+      "headline": "没有第十个人的痕迹",
+      "body_lines": [
+        "现场未发现搏斗痕迹。",
+        "雪地上没有第十组脚印。",
+        "帐篷内的财物与食物均未被取走。",
+        "严重骨折者的体表却没有对应的外伤。"
+      ],
+      "image_caption": "图：1959年调查卷宗中的营地位置示意",
+      "image_query": "Dyatlov Pass 1959 investigation case file map"
+    },
+    {
+      "kind": "official",
+      "headline": "结论用了六十一年",
+      "body_lines": [
+        "1959年的调查以「不可抗拒的自然力量」结案。",
+        "卷宗随后被列为机密。",
+        "2019年，俄罗斯总检察院重启调查。",
+        "2020年，官方认定死因为雪崩与低能见度。"
+      ],
+      "image_caption": "图：事发地所在的乌拉尔山北部地形",
+      "image_query": "Northern Ural mountains winter landscape"
+    },
+    {
+      "kind": "cta",
+      "headline": "你会先跑，还是先穿鞋",
+      "body_lines": [
+        "在零下二十度的夜里，什么事能让人放弃鞋子。",
+        "评论区说说你的判断。",
+        "下期 CASE 02：安德烈北极气球远征。"
+      ],
+      "image_caption": "",
+      "image_query": ""
+    }
+  ],
+  "feed_caption": "1959年2月，九名登山者在乌拉尔山深夜割开帐篷、赤脚冲进零下二十多度的雪原，随后全部遇难。现场没有搏斗痕迹，雪地上也没有第十组脚印。苏联的调查以「不可抗拒的自然力量」结案并封存卷宗，直到六十一年后才给出新的结论。那一夜到底发生了什么，记录里始终留着一处空白。",
+  "xhs_title": "赤脚逃出帐篷｜1959年乌拉尔山的那一夜",
+  "topics": ["极地档案", "未解之谜", "历史档案", "迪亚特洛夫事件", "冷知识"],
+  "fact_notes": [
+    "九名队员、1959年2月1日扎营于1079高地东坡：见1959年苏联调查卷宗，现已部分公开",
+    "帐篷切口来自内侧：1959年卷宗中的篷布鉴定结论",
+    "五人死于体温过低、另有颅骨与肋骨骨折记录：1959年尸检报告",
+    "1959年以「不可抗拒的自然力量」结案：原始结案表述",
+    "2019年重启调查、2020年认定雪崩：俄罗斯总检察院公开通报"
+  ],
+  "risk_flags": [
+    "伤情描述仅使用尸检报告的记录用词，未做任何渲染",
+    "全篇不解释成因、不指控任何个人",
+    "事件距今超过60年，当事各方无在世追责需求",
+    "配图需确认为苏联调查卷宗公开影像，落地前须完成授权登记"
+  ]
+}

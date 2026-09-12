@@ -1,0 +1,22 @@
+# 栏目身份：改这里就能整体换皮，模板不用动
+brand:
+  masthead: "极地档案"
+  masthead_en: "POLAR ARCHIVES"
+  column: "远征灾难档案"
+  issue: 1                 # 每期递增，制造连载感
+
+visual:
+  paper: "#FAFAF8"         # 内页纸白
+  ink: "#141414"           # 正文墨色
+  accent: "#1B6B8C"        # 点缀冰蓝（案例用橙，极地题材换冷调）
+  muted: "#8A8A85"         # 图注灰
+  cover_bg: "#0E1418"      # 封面深底
+
+video:
+  width: 1080
+  height: 1920
+  fps: 30
+  cover_sec: 3.0           # 封面停留
+  page_sec: 4.2            # 内页停留：够读完 4-6 行，又不拖完播率
+  transition_sec: 0.45     # 翻页转场
+  ken_burns: 0.05          # 每页缓慢推镜幅度，0 则完全静止

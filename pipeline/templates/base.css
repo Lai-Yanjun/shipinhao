@@ -1,0 +1,284 @@
+/* 档案页视觉系统。
+   两套刻意反差的风格：封面暗黑做旧负责抢点击，内页白底极简负责建立可信度。
+   所有尺寸按 1080×1920 竖屏硬编码，不做响应式 —— 这是渲染画布，不是网页。 */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body {
+  width: 1080px;
+  height: 1920px;
+  overflow: hidden;
+  font-family: "Noto Sans CJK SC", "Noto Sans SC", "Source Han Sans SC", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.noise {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+/* ======================= 内页：白底极简 ======================= */
+
+.page {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 104px 96px 132px;
+  display: flex;
+  flex-direction: column;
+}
+
+.masthead {
+  display: flex;
+  align-items: center;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.masthead .mark {
+  width: 22px;
+  height: 22px;
+  background: var(--accent);
+  margin-right: 20px;
+}
+
+.masthead .column {
+  margin-left: auto;
+  font-weight: 400;
+  font-size: 30px;
+  color: var(--muted);
+  letter-spacing: 0.12em;
+}
+
+.caseline {
+  margin-top: 92px;
+  font-size: 27px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.2em;
+}
+
+.headline {
+  margin-top: 30px;
+  font-size: 78px;
+  font-weight: 700;
+  line-height: 1.22;
+  letter-spacing: 0.01em;
+}
+
+.rule {
+  width: 96px;
+  height: 7px;
+  background: var(--accent);
+  margin-top: 40px;
+}
+
+.body {
+  margin-top: 60px;
+}
+
+.body p {
+  font-size: 46px;
+  line-height: 1.78;
+  letter-spacing: 0.015em;
+}
+
+/* 逻辑空洞页是整条视频的命门，给它一个视觉重音 */
+.page.contradiction .body p:last-child {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+figure {
+  margin-top: auto;
+  padding-top: 56px;
+}
+
+figure img {
+  width: 100%;
+  height: 760px;
+  object-fit: cover;
+  display: block;
+  filter: grayscale(0.35) contrast(1.06);
+}
+
+.img-missing {
+  width: 100%;
+  height: 760px;
+  border: 3px dashed #C9C9C2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  color: var(--muted);
+  text-align: center;
+  padding: 0 60px;
+}
+
+.img-missing .label { font-size: 34px; font-weight: 700; }
+.img-missing .query { font-size: 26px; line-height: 1.6; }
+
+figcaption {
+  margin-top: 22px;
+  font-size: 25px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+
+.page footer {
+  margin-top: 56px;
+  padding-top: 26px;
+  border-top: 2px solid #E4E4DE;
+  display: flex;
+  font-size: 23px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+}
+
+.page footer .pageno { margin-left: auto; }
+
+/* AI 生成标识：《人工智能生成合成内容标识办法》要求显著标注，不是可选项 */
+.ai-mark {
+  position: absolute;
+  left: 96px;
+  bottom: 52px;
+  font-size: 21px;
+  color: #B4B4AE;
+  letter-spacing: 0.08em;
+}
+
+/* ======================= 封面：暗黑做旧 ======================= */
+
+.cover {
+  position: relative;
+  width: 1080px;
+  height: 1920px;
+  background:
+    radial-gradient(circle at 50% 36%, #1C262D 0%, var(--cover-bg) 62%, #070B0E 100%);
+  color: #F2EFE8;
+  padding: 120px 90px 96px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+.cover .brandline {
+  font-size: 27px;
+  letter-spacing: 0.42em;
+  color: #9FB0BA;
+  text-indent: 0.42em;
+}
+
+.cover .hook {
+  margin-top: 64px;
+  font-size: 136px;
+  font-weight: 700;
+  line-height: 1.16;
+  letter-spacing: 0.03em;
+  text-shadow: 0 6px 28px rgba(0, 0, 0, 0.6);
+}
+
+.cover .caseline {
+  margin-top: 46px;
+  font-size: 28px;
+  color: #A9BCC7;
+  letter-spacing: 0.24em;
+  text-indent: 0.24em;
+}
+
+.cover .divider {
+  width: 180px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #7E93A0, transparent);
+  margin-top: 44px;
+}
+
+/* 老照片贴在档案板上：白边 + 轻微旋转 + 胶带 */
+.photo {
+  position: relative;
+  margin: auto 0;
+  width: 864px;
+  padding: 26px 26px 78px;
+  background: #EDE7DA;
+  transform: rotate(-1.6deg);
+  box-shadow: 0 26px 60px rgba(0, 0, 0, 0.62);
+}
+
+.photo::before,
+.photo::after {
+  content: "";
+  position: absolute;
+  top: -26px;
+  width: 168px;
+  height: 52px;
+  background: rgba(226, 216, 190, 0.42);
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.35);
+}
+
+.photo::before { left: 58px; transform: rotate(-4deg); }
+.photo::after { right: 58px; transform: rotate(3.5deg); }
+
+.photo img {
+  width: 100%;
+  height: 792px;
+  object-fit: cover;
+  display: block;
+  filter: sepia(0.42) contrast(1.16) brightness(0.9) grayscale(0.28);
+}
+
+.photo .stamp {
+  position: absolute;
+  left: 26px;
+  right: 26px;
+  bottom: 22px;
+  font-size: 25px;
+  color: #55504A;
+  letter-spacing: 0.1em;
+}
+
+.cover .footerbar {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 28px;
+  letter-spacing: 0.16em;
+  color: #C6D2D9;
+}
+
+.cover .footerbar .dot {
+  width: 12px;
+  height: 12px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.cover .ai-mark { color: #6E7C85; left: 50%; transform: translateX(-50%); }
+
+/* 封面缺图占位：保持构图重量，避免中段塌成一片空 */
+.photo.empty {
+  background: rgba(237, 231, 218, 0.07);
+  border: 3px dashed rgba(201, 214, 222, 0.28);
+  height: 896px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px;
+  color: #8A9BA6;
+}
+
+.photo.empty::before, .photo.empty::after { display: none; }
+.photo.empty .label { font-size: 34px; font-weight: 700; }
+.photo.empty .query { font-size: 25px; line-height: 1.6; text-align: center; }
