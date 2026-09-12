@@ -16,7 +16,8 @@ description: 制作一期「极地档案」栏目内容 —— 选题、查证�
 
 - `docs/playbook.md` —— 六段式、钩子写法、页面结构
 - `docs/compliance.md` —— 内容红线、素材授权、AI 标识
-- `styles/` —— 风格锚定语料（用户提供的优秀文案拆解结果）。**有则必须遵循**，没有就按 playbook。
+- `styles/rules.md` —— 蒸馏出的写作规则。**有内容则必须遵循**，为空就按 playbook。
+  语料抓取见 `scripts/fetch_transcript.py`（只能在用户本地跑，云端访问不了 B 站）。
 
 ## 第 1 步：选题
 

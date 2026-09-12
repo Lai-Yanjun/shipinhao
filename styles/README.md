@@ -4,7 +4,20 @@
 
 ## 怎么放
 
-每条一个文件 `styles/raw/<任意名>.md`，文字誊录即可，不需要视频。附上你觉得它好在哪。
+每条一个文件 `styles/raw/<任意名>.md`。
+
+**自动抓取（在你自己的机器上跑，云端出不去网）：**
+
+```bash
+pip install yt-dlp
+python scripts/fetch_transcript.py "<B站视频链接>" --cookies-from-browser chrome
+```
+
+先试字幕，没字幕加 `--asr` 转写音频（需另装 `faster-whisper`）。
+找最多播放的：浏览器打开 `space.bilibili.com/<uid>/video?order=click`，复制前几条链接。
+
+**手动誊录也完全够用** —— 蒸馏真正要看的是每条的**前 60–90 秒**（钩子段）加标题，
+不是十分钟全文。抄一段话比搭工具链快。
 
 ## 怎么用
 
