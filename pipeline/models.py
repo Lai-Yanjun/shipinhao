@@ -37,8 +37,10 @@ class Page(BaseModel):
     )
     image_query: str = Field(
         description=(
-            "用于到 Wikimedia Commons 等公版图库检索该页配图的英文关键词，"
-            "3-8 个词。该页不配图时填空字符串。"
+            "用于检索该页配图的关键词，**2-4 个词，宁短勿长**。"
+            "图库全文检索对词做 AND，5 个词以上通常一条都匹配不到 —— "
+            "写『Dyatlov Pass tent』，不要写『Dyatlov Pass tent 1959 investigators snow』。"
+            "该页不配图时填空字符串。"
         )
     )
 
@@ -55,6 +57,22 @@ class CaseScript(BaseModel):
     year: int = Field(description="事件发生年份")
     region: str = Field(description="地点，国家+地区，如『苏联 · 乌拉尔』")
     meta_line: str = Field(description="档案编号行的后半段，如『1959 · 苏联 · 乌拉尔』")
+    wiki_refs: List[str] = Field(
+        default_factory=list,
+        description=(
+            "该事件的维基百科条目，格式 `语言代码:条目名`，如 "
+            "`en:Dyatlov Pass incident`、`ru:Гибель тургруппы Дятлова`。"
+            "**务必带上事发国语言的条目** —— 历史照片的文件名常是当地语言，"
+            "英文关键词检索永远搜不到，但本国语言的条目里就挂着。"
+        ),
+    )
+    commons_categories: List[str] = Field(
+        default_factory=list,
+        description=(
+            "Wikimedia Commons 上该事件的分类名，不含 `Category:` 前缀，"
+            "如 `Dyatlov Pass incident`。分类检索比关键词检索准得多。"
+        ),
+    )
     pages: List[Page] = Field(
         description=(
             "按顺序排列的页面，共 8 页：cover ×1、coordinate ×1、fact ×3、"
