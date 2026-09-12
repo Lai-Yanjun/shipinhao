@@ -13,6 +13,14 @@ from PIL import Image
 
 from .models import CaseScript
 
+# 平台曲库里的搜索方向，按情绪标签给
+_BGM_KEYWORDS = {
+    "cold": "极寒 / 风声 / 空旷 / ambient cold",
+    "tension": "悬疑 / 低频推进 / 心跳 / dark tension",
+    "grief": "哀悼 / 弦乐收束 / 钢琴独奏 / melancholy",
+    "archive": "纪录片 / 档案 / 克制 / documentary neutral",
+}
+
 
 def build_carousel(pngs: list[Path], out_dir: Path) -> Path:
     """小红书图文轮播：页面 PNG 原样复用，不做二次加工。"""
@@ -34,6 +42,51 @@ def build_longpic(pngs: list[Path], out_dir: Path) -> Path:
         y += im.height
     path = out_dir / "wechat_longpic.jpg"
     canvas.save(path, quality=88, optimize=True)
+    return path
+
+
+def write_assets_todo(script: CaseScript, out_dir: Path) -> Path:
+    """生成配图任务单骨架。
+
+    只生成骨架，不填内容 —— 检索与授权核验由会话完成（见 archive-case 技能）。
+    代码不该假装自己核实过授权。
+    """
+    blocks = []
+    for i, page in enumerate(script.pages, start=1):
+        if not (page.image_query or page.image_caption):
+            continue
+        blocks.append(
+            f"""### 第 {i} 页
+
+- 图注：{page.image_caption or '（无）'}
+- 检索关键词：`{page.image_query}`
+- 候选：
+- 原始页面：
+- 授权：
+- 授权依据（在哪看到的）：
+- 为什么选它：
+- 存为：`topics/assets/{script.slug}/p{i:02d}.jpg`
+"""
+        )
+    content = f"""# 配图任务单 · {script.case_title}
+
+云端会话搜得到、读得到授权信息，但**下载不了文件**（出网策略拦截外部站点）。
+所以这里只出任务单，由你照单下载。
+
+## 授权判断规则
+
+只收 Public Domain、CC0、CC BY、CC BY-SA。**逐张点开原始页面核对**，
+不要只信搜索结果里的标注 —— Commons 的授权字段是上传者自己填的，存在填错的情况，
+也存在文件页自己挂着「possible wrong license」的情况。
+
+CC BY / CC BY-SA 需要署名，署名信息一并记进 `assets.yaml`。
+
+下载完成后在 `topics/assets/{script.slug}/assets.yaml` 逐张登记，
+否则 `python cli.py verify` 不会放行。
+
+{''.join(blocks)}"""
+    path = out_dir / "assets_todo.md"
+    path.write_text(content, encoding="utf-8")
     return path
 
 
@@ -74,6 +127,16 @@ def write_copy(script: CaseScript, cfg: dict[str, Any], case_no: int, out_dir: P
 ## 合规自检
 
 {risks}
+
+## 配乐
+
+情绪标签：`{script.bgm_mood}`
+
+优先用平台自带曲库（视频号／抖音）—— 零版权风险，且平台对使用自家曲库的内容有流量倾斜。
+在平台内搜索方向：{_BGM_KEYWORDS.get(script.bgm_mood, '氛围 / 纪录片 / 低频')}。
+
+需要统一听感时（公众号长图那条线用不上平台曲库），从 `assets/bgm/{script.bgm_mood}/`
+里选一首，合成时 `--bgm` 指过去。该目录只放你确认过商用授权的曲子。
 
 ## 发布前清单
 

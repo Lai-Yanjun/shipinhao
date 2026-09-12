@@ -16,7 +16,10 @@ video:
   width: 1080
   height: 1920
   fps: 30
-  cover_sec: 3.0           # 封面停留
-  page_sec: 4.2            # 内页停留：够读完 4-6 行，又不拖完播率
+  cover_sec: 3.2           # 封面停留
+  # 内页停留按字数推算：观众是扫读不是逐字读，11 字/秒接近实测上限
+  reading_cps: 11.0
+  page_pad_sec: 1.2        # 每页的进出缓冲
+  page_min_sec: 3.5        # 再短的页面也要给这么久
   transition_sec: 0.45     # 翻页转场
   ken_burns: 0.05          # 每页缓慢推镜幅度，0 则完全静止

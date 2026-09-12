@@ -21,9 +21,9 @@ import yaml
 from pipeline import archive, verify
 from pipeline.config import ROOT, load_config
 from pipeline.models import CaseScript
-from pipeline.package import build_carousel, build_longpic, write_copy
+from pipeline.package import build_carousel, build_longpic, write_assets_todo, write_copy
 from pipeline.render import render_case
-from pipeline.video import build_video
+from pipeline.video import build_video, page_durations
 
 OUT = ROOT / "out"
 ASSETS = ROOT / "topics" / "assets"
@@ -66,15 +66,18 @@ def cmd_build(args: argparse.Namespace) -> int:
         print(f"BGM 不存在：{bgm}，改出无声轨", file=sys.stderr)
         bgm = None
 
-    video = build_video(pngs, out_dir / "video_9x16.mp4", cfg, bgm)
+    video = build_video(pngs, out_dir / "video_9x16.mp4", cfg, bgm,
+                        page_durations(script, cfg))
     carousel = build_carousel(pngs, out_dir)
     longpic = build_longpic(pngs, out_dir)
     copy = write_copy(script, cfg, case_no, out_dir)
+    todo = write_assets_todo(script, out_dir)
 
     print(f"视频号/抖音：{video}")
     print(f"小红书轮播：{carousel}")
     print(f"公众号长图：{longpic}")
     print(f"文案与清单：{copy}")
+    print(f"配图任务单：{todo}")
 
     # cta 等页面本就不配图，只检查声明了配图需求的页
     missing = [
@@ -140,7 +143,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
     out_dir = OUT / args.slug
     pngs = render_case(script, cfg, case_no, assets_dir, out_dir)
     build_video(pngs, out_dir / "video_9x16.mp4", cfg,
-                Path(args.bgm) if args.bgm and Path(args.bgm).exists() else None)
+                Path(args.bgm) if args.bgm and Path(args.bgm).exists() else None,
+                page_durations(script, cfg))
     build_carousel(pngs, out_dir)
     build_longpic(pngs, out_dir)
     write_copy(script, cfg, case_no, out_dir)

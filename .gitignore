@@ -11,3 +11,6 @@ topics/assets/dyatlov-pass/
 archive/CASE-*/
 topics/assets/dyatlov-v2/
 topics/assets/dyatlov-v3/
+topics/assets/dyatlov-v4/
+assets/bgm/**/*.mp3
+assets/bgm/**/*.wav

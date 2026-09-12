@@ -72,6 +72,13 @@ class CaseScript(BaseModel):
             "（如官方调查报告名称、年份、可检索的机构）。这是防止翻车的底稿。"
         )
     )
+    bgm_mood: str = Field(
+        default="cold",
+        description=(
+            "配乐情绪标签，用于从 assets/bgm/<标签>/ 目录里选曲。"
+            "可选：cold（极寒/空旷）、tension（悬疑推进）、grief（哀悼收束）、archive（档案/克制）。"
+        ),
+    )
     risk_flags: List[str] = Field(
         description=(
             "合规自检结果：列出本期可能触线的点（涉在世当事人、未结案、伤情描写、"

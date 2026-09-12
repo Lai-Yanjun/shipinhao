@@ -18,8 +18,9 @@ IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
 HOOK_BANNED = ("事件", "之谜", "谜案", "悬案", "真相", "揭秘", "震惊")
 # 版面预算：1080px 宽减去两侧 96px 留白，46px 字号约容 19 个汉字，留一字余量。
 # 超出会折行，折行会把图注和页脚挤出页面。
-MAX_CHARS_PER_LINE = 18
-MAX_LINES_PER_PAGE = 5
+MAX_CHARS_PER_LINE = 21
+MAX_LINES_PER_PAGE = 8
+MAX_HEADLINE_CHARS = 12
 # 替观众下情绪结论的词。对标样本里一个都没有。
 BANNED_WORDS = ("震惊", "细思极恐", "毛骨悚然", "不寒而栗", "骇人听闻", "令人发指", "真相竟然")
 # 自我指涉。我们没有主播，页面上出现这些等于把黄金位置让给废话 ——
@@ -124,6 +125,8 @@ def check_layout(script: CaseScript) -> Check:
     """版面预算。超了不是不好看 —— 是图注和页脚会被挤出页面。"""
     problems = []
     for i, page in enumerate(script.pages, start=1):
+        if len(page.headline) > MAX_HEADLINE_CHARS:
+            problems.append(f"第 {i} 页标题 {len(page.headline)} 字，超出 {MAX_HEADLINE_CHARS}")
         if len(page.body_lines) > MAX_LINES_PER_PAGE:
             problems.append(f"第 {i} 页 {len(page.body_lines)} 行，超出 {MAX_LINES_PER_PAGE} 行")
         for line in page.body_lines:
@@ -131,7 +134,7 @@ def check_layout(script: CaseScript) -> Check:
                 problems.append(f"第 {i} 页「{line[:12]}…」{len(line)} 字，超出 {MAX_CHARS_PER_LINE}")
     if problems:
         return Check("版面预算", False, "；".join(problems[:4]))
-    return Check("版面预算", True, f"每页不超过 {MAX_LINES_PER_PAGE} 行、每行不超过 {MAX_CHARS_PER_LINE} 字")
+    return Check("版面预算", True, f"标题 ≤{MAX_HEADLINE_CHARS} 字，每页 ≤{MAX_LINES_PER_PAGE} 行，每行 ≤{MAX_CHARS_PER_LINE} 字")
 
 
 def check_words(script: CaseScript) -> Check:

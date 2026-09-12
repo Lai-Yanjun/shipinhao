@@ -23,18 +23,36 @@ def _segment_filter(idx: int, dur: float, cfg: dict[str, Any]) -> str:
     )
 
 
+def page_durations(script: Any, cfg: dict[str, Any]) -> list[float]:
+    """按页面字数推算停留时长。
+
+    固定时长在这里行不通：同一套模板里，一页可能 4 行也可能 8 行，
+    给短页太久拖完播率，给长页太短根本读不完。
+    """
+    v = cfg["video"]
+    out = [float(v["cover_sec"])]
+    for page in script.pages[1:]:
+        chars = len(page.headline) + sum(len(line) for line in page.body_lines)
+        out.append(max(v["page_min_sec"], round(chars / v["reading_cps"] + v["page_pad_sec"], 2)))
+    return out
+
+
 def build_video(
     pngs: list[Path],
     out_path: Path,
     cfg: dict[str, Any],
     bgm: Path | None = None,
+    durations: list[float] | None = None,
 ) -> Path:
     if not pngs:
         raise ValueError("没有可合成的页面")
 
     v = cfg["video"]
     fps, trans = v["fps"], v["transition_sec"]
-    durations = [v["cover_sec"] if i == 0 else v["page_sec"] for i in range(len(pngs))]
+    if durations is None:
+        durations = [float(v["cover_sec"])] * len(pngs)
+    if len(durations) != len(pngs):
+        raise ValueError("时长数量与页面数量不一致")
     total = sum(durations) - trans * (len(pngs) - 1)
 
     cmd: list[str] = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error"]
