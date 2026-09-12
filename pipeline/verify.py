@@ -16,6 +16,12 @@ from .models import CaseScript
 IMAGE_EXTS = (".jpg", ".jpeg", ".png", ".webp")
 # 钩子里出现这些词，说明写成了事件学名而不是具体动作
 HOOK_BANNED = ("事件", "之谜", "谜案", "悬案", "真相", "揭秘", "震惊")
+# 版面预算：1080px 宽减去两侧 96px 留白，46px 字号约容 19 个汉字，留一字余量。
+# 超出会折行，折行会把图注和页脚挤出页面。
+MAX_CHARS_PER_LINE = 18
+MAX_LINES_PER_PAGE = 5
+# 替观众下情绪结论的词。对标样本里一个都没有。
+BANNED_WORDS = ("震惊", "细思极恐", "毛骨悚然", "不寒而栗", "骇人听闻", "令人发指", "真相竟然")
 
 
 @dataclass
@@ -111,10 +117,37 @@ def check_structure(script: CaseScript) -> Check:
     return Check("叙事结构", True, f"{len(kinds)} 页，结构完整")
 
 
+def check_layout(script: CaseScript) -> Check:
+    """版面预算。超了不是不好看 —— 是图注和页脚会被挤出页面。"""
+    problems = []
+    for i, page in enumerate(script.pages, start=1):
+        if len(page.body_lines) > MAX_LINES_PER_PAGE:
+            problems.append(f"第 {i} 页 {len(page.body_lines)} 行，超出 {MAX_LINES_PER_PAGE} 行")
+        for line in page.body_lines:
+            if len(line) > MAX_CHARS_PER_LINE:
+                problems.append(f"第 {i} 页「{line[:12]}…」{len(line)} 字，超出 {MAX_CHARS_PER_LINE}")
+    if problems:
+        return Check("版面预算", False, "；".join(problems[:4]))
+    return Check("版面预算", True, f"每页不超过 {MAX_LINES_PER_PAGE} 行、每行不超过 {MAX_CHARS_PER_LINE} 字")
+
+
+def check_words(script: CaseScript) -> Check:
+    """禁用词。这类词是替观众下情绪结论，反而显得内容不够硬要靠形容词撑。"""
+    hits = []
+    for i, page in enumerate(script.pages, start=1):
+        for line in [page.headline, *page.body_lines]:
+            hits += [f"第 {i} 页「{w}」" for w in BANNED_WORDS if w in line]
+    if hits:
+        return Check("禁用词", False, "；".join(hits))
+    return Check("禁用词", True, "无")
+
+
 def run(script: CaseScript, assets_dir: Path) -> Report:
     report = Report()
     report.checks.append(check_hook(script))
     report.checks.append(check_structure(script))
+    report.checks.append(check_layout(script))
+    report.checks.append(check_words(script))
     report.checks.extend(check_assets(script, assets_dir))
     # 这两项机器判断不了，必须人看
     report.checks.append(
