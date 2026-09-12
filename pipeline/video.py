@@ -61,7 +61,8 @@ def build_video(
 
     audio_idx = len(pngs)
     if bgm is not None:
-        cmd += ["-i", str(bgm)]
+        # 循环输入：配乐短于视频时自动接上，由后面的 -t 截断
+        cmd += ["-stream_loop", "-1", "-i", str(bgm)]
     else:
         cmd += ["-f", "lavfi", "-t", f"{total:.3f}", "-i", "anullsrc=r=44100:cl=stereo"]
 

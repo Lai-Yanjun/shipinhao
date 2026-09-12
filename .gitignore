@@ -4,10 +4,12 @@ __pycache__/
 assets/bgm/
 .venv/
 archive/CASE-*/
-assets/bgm/**/*.mp3
-assets/bgm/**/*.wav
 
 # 素材图片必须入库 —— 云端会话的出网策略拦截了所有图片站，
 # git 是把图片送进渲染环境的唯一通路。
 # 只排除我为验证排版生成的合成占位图。
 topics/assets/_synthetic/
+
+# 配乐由 scripts/make_bgm.py 合成，确定性产物，入库省得每台机器重跑。
+# 外部来源的音频不要入库 —— 授权各不相同，放这里会混淆。
+assets/bgm/**/*.wav

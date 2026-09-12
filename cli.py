@@ -61,10 +61,7 @@ def cmd_build(args: argparse.Namespace) -> int:
     pngs = render_case(script, cfg, case_no, assets_dir, out_dir)
     print(f"页面已渲染：{len(pngs)} 页 → {out_dir / 'pages'}")
 
-    bgm = Path(args.bgm) if args.bgm else None
-    if bgm is not None and not bgm.exists():
-        print(f"BGM 不存在：{bgm}，改出无声轨", file=sys.stderr)
-        bgm = None
+    bgm = _pick_bgm(script, args.bgm)
 
     video = build_video(pngs, out_dir / "video_9x16.mp4", cfg, bgm,
                         page_durations(script, cfg))
@@ -93,6 +90,27 @@ def cmd_build(args: argparse.Namespace) -> int:
         print(f"\n注意：第 {missing} 页尚无配图，已渲染成占位框。")
         print(f"      把公版图片按 p02.jpg 这样的命名放进 {assets_dir}/ 后重跑 build。")
     return 0
+
+
+AUDIO_EXTS = (".mp3", ".m4a", ".wav", ".ogg")
+
+
+def _pick_bgm(script: CaseScript, explicit: str | None) -> Path | None:
+    """选配乐：显式指定优先，否则按情绪标签从曲库里取。"""
+    if explicit:
+        path = Path(explicit)
+        if path.exists():
+            return path
+        print(f"BGM 不存在：{path}", file=sys.stderr)
+        return None
+
+    folder = ROOT / "assets" / "bgm" / script.bgm_mood
+    candidates = sorted(p for p in folder.glob("*") if p.suffix.lower() in AUDIO_EXTS)
+    if candidates:
+        return candidates[0]
+    print(f"曲库里没有 {script.bgm_mood} 情绪的配乐，出无声轨。", file=sys.stderr)
+    print(f"  生成一条：python scripts/make_bgm.py --mood {script.bgm_mood}", file=sys.stderr)
+    return None
 
 
 def _load(slug: str) -> CaseScript:
@@ -143,8 +161,7 @@ def cmd_verify(args: argparse.Namespace) -> int:
     out_dir = OUT / args.slug
     pngs = render_case(script, cfg, case_no, assets_dir, out_dir)
     build_video(pngs, out_dir / "video_9x16.mp4", cfg,
-                Path(args.bgm) if args.bgm and Path(args.bgm).exists() else None,
-                page_durations(script, cfg))
+                _pick_bgm(script, args.bgm), page_durations(script, cfg))
     build_carousel(pngs, out_dir)
     build_longpic(pngs, out_dir)
     write_copy(script, cfg, case_no, out_dir)
