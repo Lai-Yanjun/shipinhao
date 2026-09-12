@@ -109,11 +109,16 @@ def _pick_bgm(script: CaseScript, explicit: str | None) -> Path | None:
         return None
 
     folder = ROOT / "assets" / "bgm" / script.bgm_mood
-    candidates = sorted(p for p in folder.glob("*") if p.suffix.lower() in AUDIO_EXTS)
+    candidates = [p for p in folder.glob("*") if p.suffix.lower() in AUDIO_EXTS]
     if candidates:
-        return candidates[0]
-    print(f"曲库里没有 {script.bgm_mood} 情绪的配乐，出无声轨。", file=sys.stderr)
-    print(f"  生成一条：python scripts/make_bgm.py --mood {script.bgm_mood}", file=sys.stderr)
+        # 最近放进去的优先 —— 按文件名排序会让中文名排到后面，挡掉你自己的曲子
+        chosen = max(candidates, key=lambda p: p.stat().st_mtime)
+        print(f"配乐：{chosen.name}（{script.bgm_mood}）")
+        if len(candidates) > 1:
+            print(f"  该目录下共 {len(candidates)} 首，取最近放入的；"
+                  f"要指定用 --bgm <路径>")
+        return chosen
+    print(f"assets/bgm/{script.bgm_mood}/ 是空的，出无声轨。", file=sys.stderr)
     return None
 
 def cmd_assets(args: argparse.Namespace) -> int:

@@ -10,6 +10,9 @@ archive/CASE-*/
 # 只排除我为验证排版生成的合成占位图。
 topics/assets/_synthetic/
 
-# 配乐由 scripts/make_bgm.py 合成，确定性产物，入库省得每台机器重跑。
-# 外部来源的音频不要入库 —— 授权各不相同，放这里会混淆。
+# 音频不入库：往仓库里放有授权的音乐等于再分发，仓库一旦公开就是问题。
+# 授权登记（licenses.yaml）要入库，音频本身不要。
+assets/bgm/**/*.mp3
+assets/bgm/**/*.m4a
 assets/bgm/**/*.wav
+assets/bgm/**/*.ogg

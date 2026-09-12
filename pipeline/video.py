@@ -86,7 +86,13 @@ def build_video(
         current = label
 
     steps.append(f"{current}format=yuv420p[vout]")
-    audio_filter = f"[{audio_idx}:a]afade=t=out:st={max(total - 2.0, 0):.3f}:d=2[aout]"
+    # 无论放进来的是什么音量，统一压到 -22 LUFS：配乐垫在画面下面，不能抢。
+    # 不做这步，随手丢一首正常响度的歌进来就会盖掉整条片子。
+    audio_filter = (
+        f"[{audio_idx}:a]loudnorm=I=-22:TP=-2,"
+        f"afade=t=in:st=0:d=1.5,"
+        f"afade=t=out:st={max(total - 2.5, 0):.3f}:d=2.5[aout]"
+    )
     steps.append(audio_filter)
 
     cmd += [
