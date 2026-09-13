@@ -204,6 +204,7 @@ def check_caption_match(script: CaseScript, assets_dir: Path) -> Check:
     机器判断不了图里是什么，所以列为强制人工项，把每一对图注/文件名摆出来对照。
     """
     pairs = []
+    unpaired = []
     for i, page in enumerate(script.pages, start=1):
         if not page.image_caption:
             continue
@@ -213,6 +214,7 @@ def check_caption_match(script: CaseScript, assets_dir: Path) -> Check:
             None,
         )
         if asset is None:
+            unpaired.append(i)
             continue
         source = "（assets.yaml 未登记）"
         manifest = assets_dir / "assets.yaml"
@@ -225,8 +227,13 @@ def check_caption_match(script: CaseScript, assets_dir: Path) -> Check:
             if entry:
                 source = entry.get("note") or entry.get("source_url", "")
         pairs.append(f"      · 第 {i} 页 图注「{page.image_caption}」\n        配图 {source}")
+    if unpaired:
+        # 有图注却找不到图，说明图还没配齐，不能当作「无配图页」放行 ——
+        # 否则素材一补上，这一项就从没被人对照过
+        pairs.append(f"{'      · ' if pairs else ''}第 {unpaired} 页有图注但尚无配图，补图后须重新对照")
+        return Check("图注与配图相符", False, "\n".join(pairs))
     if not pairs:
-        return Check("图注与配图相符", True, "无配图页", needs_human=False)
+        return Check("图注与配图相符", True, "无图注页", needs_human=False)
     return Check("图注与配图相符", True, "\n".join(pairs), needs_human=True)
 
 
