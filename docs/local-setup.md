@@ -65,8 +65,9 @@ python cli.py build --slug demo --case-no 1
 
 ```bash
 python cli.py list                    # 选题池
-# 让 Claude 按 .claude/skills/archive-case/ 做完选题→查证→文案→配图任务单
-bash topics/assets/DOWNLOAD-<slug>.sh # 照单下载配图
+# 让 Claude 按 .claude/skills/archive-case/ 做完选题→查证→文案→挑图
+python cli.py assets --slug <slug>    # 检索候选配图，出九宫格
+python cli.py pick   --slug <slug> --page 3 --choice 12   # 下原图并登记授权
 python cli.py build  --slug <slug>
 python cli.py verify --slug <slug>    # 校验闸门，通过才分配 CASE 编号
 # 发布，然后回填

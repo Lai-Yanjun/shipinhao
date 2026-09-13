@@ -23,7 +23,7 @@ from pipeline.config import ROOT, load_config
 from pipeline.models import CaseScript
 from pipeline.package import build_carousel, build_longpic, write_assets_todo, write_copy
 from pipeline.render import render_case
-from pipeline.video import MissingFFmpeg, build_video, page_durations
+from pipeline.video import MissingFFmpeg, build_video, page_durations, require_ffmpeg
 
 OUT = ROOT / "out"
 ASSETS = ROOT / "topics" / "assets"
@@ -31,6 +31,16 @@ ASSETS = ROOT / "topics" / "assets"
 
 def _script_path(slug: str) -> Path:
     return OUT / slug / "script.json"
+
+
+def _assets_dir(script: CaseScript) -> Path:
+    """素材目录一律按 script.json 里的 slug 取，不按命令行 --slug。
+
+    两者可以不同（样例就是把 dyatlov-v4 的文案放进 out/demo/ 跑），
+    曾经 build 按前者、verify/pick 按后者，同一份文案 build 有图、verify 报缺图，
+    图注核对项还因此被误判成「无配图页」直接放行。
+    """
+    return ASSETS / script.slug
 
 
 def cmd_list(_: argparse.Namespace) -> int:
@@ -55,7 +65,7 @@ def cmd_build(args: argparse.Namespace) -> int:
         int(case_no_file.read_text().strip()) if case_no_file.exists() else 1
     )
 
-    assets_dir = ASSETS / script.slug
+    assets_dir = _assets_dir(script)
     assets_dir.mkdir(parents=True, exist_ok=True)
 
     pngs = render_case(script, cfg, case_no, assets_dir, out_dir)
@@ -192,7 +202,7 @@ def cmd_pick(args: argparse.Namespace) -> int:
         return 2
     chosen = candidates[args.choice - 1]
 
-    assets_dir = ASSETS / args.slug
+    assets_dir = _assets_dir(_load(args.slug))
     dest = assets_dir / f"p{args.page:02d}.jpg"
     assets_search.download(chosen["file_url"], dest)
     print(f"已下载 {dest}（{dest.stat().st_size // 1024} KB）")
@@ -230,10 +240,12 @@ def _load(slug: str) -> CaseScript:
 
 def cmd_verify(args: argparse.Namespace) -> int:
     script = _load(args.slug)
-    assets_dir = ASSETS / args.slug
+    assets_dir = _assets_dir(script)
     report = verify.run(script, assets_dir)
 
     print(f"\n校验 {script.case_title}（{args.slug}）\n")
+    if script.slug != args.slug:
+        print(f"  素材目录按文案里的 slug 取：{assets_dir}\n")
     for check in report.checks:
         if check.needs_human:
             print(f"  [需人工确认] {check.name}")
@@ -246,11 +258,20 @@ def cmd_verify(args: argparse.Namespace) -> int:
         print(f"\n{len(report.blocking)} 项未通过，未分配编号。修完重跑。")
         return 1
 
+    # 分配编号之后要重出视频，缺 ffmpeg 就会停在「编号已占、归档没建」的半截状态，
+    # 所以在人工确认和登记之前先拦下
+    try:
+        require_ffmpeg()
+    except MissingFFmpeg as exc:
+        print(f"\n{exc}\n视频是归档必需品，未分配编号。装好 ffmpeg 后重跑。")
+        return 1
+
     if args.yes:
         verified_by = "auto"
         print("\n已用 --yes 跳过人工确认 —— 台账会记为 auto，事实与合规风险由你自己承担。")
     else:
-        print("\n以上两项机器判断不了，必须你自己看过。")
+        human = [c.name for c in report.human_items]
+        print(f"\n以上 {len(human)} 项（{'、'.join(human)}）机器判断不了，必须你自己看过。")
         answer = input("全部确认无误？(yes/N) ").strip().lower()
         if answer != "yes":
             print("未确认，不分配编号。")
@@ -268,8 +289,14 @@ def cmd_verify(args: argparse.Namespace) -> int:
     cfg = load_config()
     out_dir = OUT / args.slug
     pngs = render_case(script, cfg, case_no, assets_dir, out_dir)
-    build_video(pngs, out_dir / "video_9x16.mp4", cfg,
-                _pick_bgm(script, args.bgm), page_durations(script, cfg))
+    try:
+        build_video(pngs, out_dir / "video_9x16.mp4", cfg,
+                    _pick_bgm(script, args.bgm), page_durations(script, cfg))
+    except RuntimeError as exc:
+        print(f"\n{exc}", file=sys.stderr)
+        print(f"\nCASE {case_no:02d} 已登记但未归档。修好后重跑 verify，会沿用该编号补完归档。",
+              file=sys.stderr)
+        return 1
     build_carousel(pngs, out_dir)
     build_longpic(pngs, out_dir)
     write_copy(script, cfg, case_no, out_dir)
