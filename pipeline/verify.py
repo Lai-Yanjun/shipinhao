@@ -27,6 +27,13 @@ BANNED_WORDS = ("震惊", "细思极恐", "毛骨悚然", "不寒而栗", "骇�
 # 对标样本里写得最差的几条开场全栽在这里。
 SELF_REFERENCE = ("本期", "本栏目", "这期", "欢迎来到", "大家好", "今天给大家")
 
+# 内页图框约 1080×620。object-fit: cover 会按这个比例裁切，
+# 原图越接近方形或竖版，裁掉的越多。
+TARGET_ASPECT = 1080 / 620
+MIN_RETAINED = 0.70          # 保留不足七成算警告
+BLOCK_RETAINED = 0.50        # 保留不足一半直接卡住
+MIN_WIDTH, MIN_HEIGHT = 1080, 620
+
 
 @dataclass
 class Check:
@@ -150,6 +157,43 @@ def check_words(script: CaseScript) -> Check:
     return Check("禁用词", True, "无情绪结论词、无自我指涉")
 
 
+def check_crop(script: CaseScript, assets_dir: Path) -> Check:
+    """裁切损失与分辨率。
+
+    图会被 cover 裁成约 1080×620。竖图进来上下裁掉大半，主体常常整个没了；
+    原图小于成图尺寸则满幅铺开必糊。这两件事渲染完才看得出来，用机器提前拦。
+    """
+    try:
+        from PIL import Image
+    except ModuleNotFoundError:
+        return Check("裁切与分辨率", True, "未装 Pillow，跳过")
+
+    problems, notes = [], []
+    for i, page in enumerate(script.pages, start=1):
+        asset = next(
+            (assets_dir / f"p{i:02d}{e}" for e in IMAGE_EXTS
+             if (assets_dir / f"p{i:02d}{e}").exists()),
+            None,
+        )
+        if asset is None:
+            continue
+        with Image.open(asset) as im:
+            width, height = im.size
+        aspect = width / height
+        retained = (TARGET_ASPECT / aspect) if aspect > TARGET_ASPECT else (aspect / TARGET_ASPECT)
+
+        if retained < BLOCK_RETAINED:
+            problems.append(f"第 {i} 页 {width}×{height} 裁切后只剩 {retained:.0%}")
+        elif retained < MIN_RETAINED:
+            notes.append(f"第 {i} 页裁切后剩 {retained:.0%}，主体须在中央横带上")
+        if width < MIN_WIDTH or height < MIN_HEIGHT:
+            problems.append(f"第 {i} 页 {width}×{height} 低于 {MIN_WIDTH}×{MIN_HEIGHT}，会糊")
+
+    if problems:
+        return Check("裁切与分辨率", False, "；".join(problems))
+    return Check("裁切与分辨率", True, "；".join(notes) or "全部达标")
+
+
 def check_caption_match(script: CaseScript, assets_dir: Path) -> Check:
     """图注与配图是否相符 —— 只能人看。
 
@@ -193,6 +237,7 @@ def run(script: CaseScript, assets_dir: Path) -> Report:
     report.checks.append(check_layout(script))
     report.checks.append(check_words(script))
     report.checks.extend(check_assets(script, assets_dir))
+    report.checks.append(check_crop(script, assets_dir))
     report.checks.append(check_caption_match(script, assets_dir))
     # 以下几项机器判断不了，必须人看
     report.checks.append(
